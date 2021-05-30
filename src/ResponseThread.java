@@ -25,7 +25,7 @@ public class ResponseThread implements Runnable{
 			e.printStackTrace();
 		}
 		
-		this.scanner = scanner;
+		
 		this.keyGenerator();
 	}
 	
@@ -62,12 +62,14 @@ public class ResponseThread implements Runnable{
 	
 	private void processRequest(String request) throws IOException {
 		System.out.println(String.format("Receive original data %s", request));
-		if(request.trim() == "key") {
+		if(request.trim().equals("key")) {
 			sendResponse(String.format("%d", this.key));
+			return;
 		}
-		String[] parts = request.split("##");
+		
+		String[] parts =this.decrypt(request).split("##");
 		if(parts.length < 2 || parts.length > 3 ) {
-			sendResponse("STFMP/1.0##invalid##Invalid request.");
+			sendResponse(this.encrypt("STFMP/1.0##invalid##Invalid request."));
 			return;
 		}
 		
@@ -80,13 +82,12 @@ public class ResponseThread implements Runnable{
 	 
 	            bufferedWriter.write(data[1]);
 	            bufferedWriter.close();
-	            sendResponse("SFTMP/1.0##ok##The file has been written.");
+	            sendResponse(this.encrypt("SFTMP/1.0##ok##The file has been written."));
 			}
 			
 		}
 		
 		if(operation.equals("list")) {
-			String data = parts[2];
 			File folder = new File("./docs");
 			String response ="SFTMP/1.0##ok##";
 			File[] listOfFiles = folder.listFiles();
@@ -99,7 +100,7 @@ public class ResponseThread implements Runnable{
 				    System.out.println("File " + listOfFiles[i].getName());
 				  }
 				}
-			sendResponse(response);
+			sendResponse(this.encrypt(response));
 		}
 		else if(operation.equals("view")) {
 			
@@ -110,12 +111,12 @@ public class ResponseThread implements Runnable{
 				
 				
 				//SFTMP/1.0##ok##Hello world!
-				String response = String.format("SFTMP/1.0##ok##%s",  bufferReader.readLine());
+				String response = this.encrypt(operation.format("SFTMP/1.0##ok##%s",  bufferReader.readLine()));
 				bufferReader.close();
 				sendResponse(response);
 			}
 			catch(FileNotFoundException e) {
-				String response = String.format("SFTMP/1.0##not_found##%s","File not found.");
+				String response = this.encrypt(operation.format("SFTMP/1.0##not_found##%s","File not found."));
 				sendResponse(response);
 				
 			}
